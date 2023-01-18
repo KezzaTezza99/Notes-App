@@ -4,8 +4,9 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/Users/Kezza/AndroidStudioProjects/NotesApp/app/src/main/res/layout/activity_main.xml" value="0.358695652173913" />
+        <entry key="..\:/Users/Kezza/AndroidStudioProjects/NotesApp/app/src/main/res/layout/activity_new_note.xml" value="0.3484375" />
         <entry key="..\:/Users/Kezza/AndroidStudioProjects/NotesApp/app/src/main/res/layout/activity_notes_home.xml" value="0.358695652173913" />
-        <entry key="..\:/Users/Kezza/AndroidStudioProjects/NotesApp/app/src/main/res/layout/activity_notes_list_view.xml" value="0.1" />
+        <entry key="..\:/Users/Kezza/AndroidStudioProjects/NotesApp/app/src/main/res/layout/activity_notes_list_view.xml" value="0.35" />
       </map>
     </option>
   </component>
