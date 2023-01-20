@@ -1,4 +1,7 @@
 package com.kyle.thornton.notesapp;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.kyle.thornton.notesapp.Note;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
@@ -6,6 +9,9 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import com.google.android.material.textfield.TextInputEditText;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Objects;
 
 public class NewNote extends AppCompatActivity {
@@ -64,13 +70,37 @@ public class NewNote extends AppCompatActivity {
         SharedPreferences sharedPreferences = getSharedPreferences("sharedPrefs", MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
-        editor.clear();
-        //TODO: How do I want to store this, don't want to be overriding notes each new note added
-/*
-        editor.putString("Note Title", title);
-        editor.putString("Note", note);
-        editor.commit();
-*/
+        Gson gson = new Gson();
+        ArrayList<Note> notesToSave = new ArrayList<>();
+
+        //Before saving the note details need to check if there is already info saved to avoid overriding the note(s)
+        boolean previousDataHasBeenSaved = sharedPreferences.getBoolean("Saved", false);
+        int sizeOfList = previousDataHasBeenSaved ? sharedPreferences.getInt("Size", 0) : 0;
+
+        //We have previous data need to save the new note in the next space in the ArrayList
+        if(previousDataHasBeenSaved) {
+            //Get the data and transform it back into an ArrayList<Note> then save the new note in the next space in the list, then save
+            String oldData = sharedPreferences.getString("JSON", "");
+            Type type = new TypeToken<ArrayList<Note>>(){}.getType();
+            notesToSave = gson.fromJson(oldData, type);
+
+            //Adding the note just created in to the Array
+            notesToSave.add(new Note(title, note, "17:40"));
+        }
+        else {
+            //There isn't any previously stored note(s) so just save in index 0
+            notesToSave.add(new Note(title, note, "17:40"));
+        }
+
+        //Converting the ArrayList<Note> into a JSON object that can then be converted to a string for storage in the shared preferences
+        String json = gson.toJson(notesToSave);
+
+        //Saving the JSON in shared preferences
+        editor.putString("JSON", json);
+        editor.putBoolean("Saved", true);
+        editor.putInt("Size", notesToSave.size());
+
+        editor.apply();
 
         Intent intent = new Intent(this, NotesHome.class);
         startActivity(intent);
