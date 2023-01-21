@@ -42,6 +42,7 @@ public class NotesHome extends AppCompatActivity {
         getAddButton().setOnClickListener(view -> openNewNote());
     }
 
+    //If this is called then the user has to have a saved note(s) in the shared preferences, display this data and also be able to interact with the data
     int DisplayNotes() {
         SharedPreferences sharedPreferences = getSharedPreferences("sharedPrefs", MODE_PRIVATE);
         ArrayList<Note> notes;
@@ -49,19 +50,22 @@ public class NotesHome extends AppCompatActivity {
 
         //Getting the note that is stored as a JSON object then transforming it back into ArrayList<Note> for displaying to the list view
         String jsonData = sharedPreferences.getString("JSON", "");
-
         Type type = new TypeToken<ArrayList<Note>>(){}.getType();
         notes = gson.fromJson(jsonData, type);
 
         //Creating an array adapter
         NoteListAdapter arrayAdapter = new NoteListAdapter(this, notes);
 
+        //Setting the array adapter
         getNotesListView().setAdapter(arrayAdapter);
+        arrayAdapter.notifyDataSetChanged();
 
         //User has clicked on a note, open the note
         getNotesListView().setOnItemClickListener((adapterView, view, i, l) -> {
-            //TODO: Open the note as a new Intent
-            Log.i("On item click", "Editing the note");
+            Intent intent = new Intent(this, NewNote.class);
+            intent.putExtra("Editing a note", true);
+            intent.putExtra("Position", i);
+            startActivity(intent);
         });
 
         //User has long held on the note, ask to delete the note
