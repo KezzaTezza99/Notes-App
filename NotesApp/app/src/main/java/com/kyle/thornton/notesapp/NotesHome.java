@@ -16,6 +16,7 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NotesHome extends AppCompatActivity {
     @Override
@@ -70,17 +71,37 @@ public class NotesHome extends AppCompatActivity {
 
         //User has long held on the note, ask to delete the note
         ArrayList<Note> finalNotes = notes;
+
         getNotesListView().setOnItemLongClickListener((adapterView, view, i, l) -> {
             //Display a dialog box that asks the user to confirm that they want to delete the note
             AlertDialog.Builder builder = new AlertDialog.Builder((view.getContext()));
-            String msg = "Would you like to delete note: " + finalNotes.get(i);
+            String msg = "Would you like to delete note: " + finalNotes.get(i).getNoteTitle();
+
 
             DialogInterface.OnClickListener di = ((dialogInterface, j) -> {
                 //Has the user pressed yes?
                 if(j == DialogInterface.BUTTON_POSITIVE) {
                     //User wants to delete the selected note
-                    Log.i("Deleting Note", String.format("Note %s is being deleted", finalNotes.get(i)));
-                    //TODO: Would delete the note here and then notify the adapter
+                    finalNotes.remove(i);
+
+                    //Notifying the array adapter of the changes to update the listview
+                    arrayAdapter.notifyDataSetChanged();
+
+                    //TODO: Transform back into shared preferences and re-save - keeps deleted notes deleted
+                    //Then I need to change the saved flag to false if all notes have been deleted
+                    NoteUtilities utilities = new NoteUtilities();
+                    String data = utilities.convertToString(finalNotes);
+                    Log.i("Data after deleting", data);
+                    sharedPreferences.edit().putString("JSON", data).apply();
+
+                    //Now need to display the no note label if the notes array is empty
+                    Log.i("Final note contents", finalNotes.toString() + "-" + notes.size());
+                    int visibility = utilities.isNoteListEmpty(finalNotes) ? View.VISIBLE : View.INVISIBLE;
+                    getNoNotesLabel().setVisibility(visibility);
+
+                    //Setting data saved to false if the list is empty but the reverse as true will be returned if emptied
+                    boolean dataSaved = !utilities.isNoteListEmpty(finalNotes);
+                    sharedPreferences.edit().putBoolean("Saved", dataSaved).apply();
                 }
             });
             //Displaying the dialog interface to the user
@@ -88,8 +109,6 @@ public class NotesHome extends AppCompatActivity {
             builder.show();
             return true;
         });
-
-        //Displaying the list view
         return View.VISIBLE;
     }
 
