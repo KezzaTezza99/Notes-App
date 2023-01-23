@@ -18,14 +18,19 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+//TODO: Save the current date / time of the note being saved
 public class NotesHome extends AppCompatActivity {
+    //TEMP
+    NoteUtilities utilities = new NoteUtilities();
+    SharedPreferences sharedPreferences;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_notes_home);
 
         //Getting access to the shared preferences
-        SharedPreferences sharedPreferences = getSharedPreferences("sharedPrefs", MODE_PRIVATE);
+        sharedPreferences = getSharedPreferences("sharedPrefs", MODE_PRIVATE);
 
         //Checking shared preferences for a boolean if the boolean is false then need to hide list of notes and display no notes label
         //If it returns true then need to display the list of currently saved notes
@@ -45,14 +50,11 @@ public class NotesHome extends AppCompatActivity {
 
     //If this is called then the user has to have a saved note(s) in the shared preferences, display this data and also be able to interact with the data
     int DisplayNotes() {
-        SharedPreferences sharedPreferences = getSharedPreferences("sharedPrefs", MODE_PRIVATE);
         ArrayList<Note> notes;
-        Gson gson = new Gson();
 
         //Getting the note that is stored as a JSON object then transforming it back into ArrayList<Note> for displaying to the list view
         String jsonData = sharedPreferences.getString("JSON", "");
-        Type type = new TypeToken<ArrayList<Note>>(){}.getType();
-        notes = gson.fromJson(jsonData, type);
+        notes = utilities.convertToNoteList(jsonData);
 
         //Creating an array adapter
         NoteListAdapter arrayAdapter = new NoteListAdapter(this, notes);
@@ -87,15 +89,10 @@ public class NotesHome extends AppCompatActivity {
                     //Notifying the array adapter of the changes to update the listview
                     arrayAdapter.notifyDataSetChanged();
 
-                    //TODO: Transform back into shared preferences and re-save - keeps deleted notes deleted
-                    //Then I need to change the saved flag to false if all notes have been deleted
-                    NoteUtilities utilities = new NoteUtilities();
                     String data = utilities.convertToString(finalNotes);
-                    Log.i("Data after deleting", data);
                     sharedPreferences.edit().putString("JSON", data).apply();
 
                     //Now need to display the no note label if the notes array is empty
-                    Log.i("Final note contents", finalNotes.toString() + "-" + notes.size());
                     int visibility = utilities.isNoteListEmpty(finalNotes) ? View.VISIBLE : View.INVISIBLE;
                     getNoNotesLabel().setVisibility(visibility);
 

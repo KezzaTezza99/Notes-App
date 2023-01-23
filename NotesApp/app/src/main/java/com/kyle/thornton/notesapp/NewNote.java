@@ -14,21 +14,20 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Objects;
 
-//TODO: Make a util class that can convert the types of array lists for me just keeps code clean and also keeps code DRY
-//TODO: I have a lot of repeated code need to refactor
 public class NewNote extends AppCompatActivity {
+    //Put these in there own private methods
+    NoteUtilities utilities = new NoteUtilities();
+    SharedPreferences sharedPreferences;
+    SharedPreferences.Editor editor;
+    Gson gson = new Gson();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_note);
 
-        //TEMP TODO: replace this with a private function call
-        SharedPreferences sharedPreferences = getSharedPreferences("sharedPrefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        Gson gson = new Gson();
-
-        //Getting the text area that contains the note
-        TextInputEditText noteInputField = findViewById(R.id.newNoteNoteField);
+        sharedPreferences = getSharedPreferences("sharedPrefs", MODE_PRIVATE);
+        editor = sharedPreferences.edit();
 
         //Need to find out if the user is actually creating a new note or have they selected to edit an already existing note
         boolean editingNote = getIntent().getBooleanExtra("Editing a note", false);
@@ -46,16 +45,15 @@ public class NewNote extends AppCompatActivity {
                     Intent intent = new Intent(getApplicationContext(), NotesHome.class);
 
                     //Note is empty just go home otherwise save the note
-                    if(noteInputField.getEditableText().toString().isEmpty())
+                    if(getNoteInputField().getEditableText().toString().isEmpty())
                         startActivity(intent);
                     else
-                        saveNewNote(noteInputField.getEditableText().toString());
+                        saveNewNote(getNoteInputField().getEditableText().toString());
                 }
             };
             getOnBackPressedDispatcher().addCallback(this, callback);
         }
         else {
-            //TODO: Implement different logic here based on editing a note over creating a new note
             //Getting the index of the note that was selected to be edited
             int noteIndex = getIntent().getIntExtra("Position", 0);
 
@@ -64,15 +62,13 @@ public class NewNote extends AppCompatActivity {
 
             //Converting the String into a ArrayList<Note>
             ArrayList<Note> allNotes;
-            Type type = new TypeToken<ArrayList<Note>>(){}.getType();
-            allNotes = gson.fromJson(allNotesData, type);
+            allNotes = utilities.convertToNoteList(allNotesData);
 
             //Display the note in the text field
-            noteInputField.setText(allNotes.get(noteIndex).getNoteText());
-            //Copying the current note into a different string to compare if the user has made any changes - if so need to resave the note
-            String theOriginalNote = noteInputField.getText().toString();
+            getNoteInputField().setText(allNotes.get(noteIndex).getNoteText());
+            //Copying the current note into a different string to compare if the user has made any changes - if so need to re-save the note
+            String theOriginalNote = Objects.requireNonNull(getNoteInputField().getText()).toString();
 
-            //TODO: if anything changes then need to re-save this note
             //TODO: Can I make this bit of code better so I don't repeat myself
             OnBackPressedCallback callback = new OnBackPressedCallback(true) {
                 @Override
@@ -80,10 +76,10 @@ public class NewNote extends AppCompatActivity {
                     Intent intent = new Intent(getApplicationContext(), NotesHome.class);
 
                     //Note is the same as the original note - just go home no editing has been done
-                    if(noteInputField.getEditableText().toString().equals(theOriginalNote))
+                    if(getNoteInputField().getEditableText().toString().equals(theOriginalNote))
                         startActivity(intent);
                     else
-                        saveEditedNote(noteInputField.getEditableText().toString(), allNotes, noteIndex);
+                        saveEditedNote(getNoteInputField().getEditableText().toString(), allNotes, noteIndex);
                 }
             };
             getOnBackPressedDispatcher().addCallback(this, callback);
@@ -92,11 +88,6 @@ public class NewNote extends AppCompatActivity {
 
     //User has created a new note. Want to save the note as well as saving the title as the first word in the edit field
     void saveNewNote(String note) {
-        //TEMP
-        SharedPreferences sharedPreferences = getSharedPreferences("sharedPrefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        Gson gson = new Gson();
-
         //Storing the first word in the note as the notes title
         String title = null;
         //Presuming the note contains N amount of words, if it doesn't the title is simply saved as the note after checking for whitespace
@@ -128,15 +119,14 @@ public class NewNote extends AppCompatActivity {
         if(previousDataHasBeenSaved) {
             //Get the data and transform it back into an ArrayList<Note> then save the new note in the next space in the list, then save
             String oldData = sharedPreferences.getString("JSON", "");
-            Type type = new TypeToken<ArrayList<Note>>(){}.getType();
-            notesToSave = gson.fromJson(oldData, type);
+            notesToSave = utilities.convertToNoteList(oldData);
 
             //Adding the note just created in to the Array
-            notesToSave.add(new Note(title, note, "17:40"));
+            notesToSave.add(new Note(title, note, utilities.getCurrentTimeStamp()));
         }
         else {
             //There isn't any previously stored note(s) so just save in index 0
-            notesToSave.add(new Note(title, note, "17:40"));
+            notesToSave.add(new Note(title, note, utilities.getCurrentTimeStamp()));
         }
 
         //Converting the ArrayList<Note> into a JSON object that can then be converted to a string for storage in the shared preferences
@@ -159,13 +149,9 @@ public class NewNote extends AppCompatActivity {
         String title = getNoteTitleFromFullNote(newNote);
 
         //Replacing the original note that has now been edited with the new note - need to get its original location in the array
-        listOfAllNotes.set(locationOfTheNote, new Note(title, newNote, "22:25"));
+        listOfAllNotes.set(locationOfTheNote, new Note(title, newNote, utilities.getCurrentTimeStamp()));
 
         //Transforming the ArrayList<Note> back into a JSON string and storing in shared preferences
-        Gson gson = new Gson();
-        SharedPreferences sharedPreferences = getSharedPreferences("sharedPrefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-
         String json = gson.toJson(listOfAllNotes);
 
         //Saving the JSON in shared preferences
@@ -203,4 +189,6 @@ public class NewNote extends AppCompatActivity {
         }
         return title;
     }
+
+    private TextInputEditText getNoteInputField() { return findViewById(R.id.newNoteNoteField); }
 }

@@ -40,9 +40,9 @@ public class NoteListAdapter extends ArrayAdapter<Note> {
 
         //Want to do the additional text a little differently - only display a part of the note
         String additionalText = allNotes.get(position).getNoteText();
-        //Want to shorten the additional text displayed if the note holds more than 40 characters
+        //Want to shorten the additional text displayed if the note holds more than 60 characters
         int wordCount = additionalText.length();
-        int wordLimit = 40;
+        int wordLimit = 60;
 
         String shortenedNote = (wordCount > wordLimit) ? additionalText.substring(0, wordLimit) : additionalText;
         noteAdditionalText.setText(shortenedNote);
